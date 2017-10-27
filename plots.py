@@ -11,7 +11,7 @@ import numpy as np
 
 # draw a projection onto 2D using vornoi tessalation. Approximates highly dimensional boundaries in 2D
 # see https://pure.uva.nl/ws/files/2110683/164710_431596.pdf
-def nd_boundary_plot(X_tst, model, ax, resolution = 256):
+def nd_boundary_plot(X_tst, model, mesh_limits, ax, resolution = 256):
     if len(X_tst.shape) != 2:
         raise ValueError("X must be ndarray of the form [nsamples, nfeatures]")
     if X_tst.shape[0] < 2:
@@ -21,10 +21,10 @@ def nd_boundary_plot(X_tst, model, ax, resolution = 256):
     if len(model.classes_) < 2:
         raise ValueError("Classification must be at least binary")
     #done with sanity checks
+
     if X_tst.shape[0] == 2: #2 dimensions
-        x_min, x_max = X_tst[:, 0].min() - .5, X_tst[:, 0].max() + .5
-        y_min, y_max = X_tst[:, 1].min() - .5, X_tst[:, 1].max() + .5
-        xx, yy = np.meshgrid(np.arange(x_min, x_max, .05), np.arange(y_min, y_max, .05))
+        xmin, xmax, ymin, ymax = mesh_limits
+        xx, yy = np.meshgrid(np.arange(xmin, xmax, .05), np.arange(ymin, ymax, .05))
         if hasattr(model, "decision_function") or len(model.classes_) != 2: #model does not comute posterior or hard to graph
             Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
         else:
@@ -44,26 +44,32 @@ def nd_boundary_plot(X_tst, model, ax, resolution = 256):
         ax.scatter(X_transormed[:,0], X_transormed[:,1], c=y_predicted)
 
 def main():
+
     X, y = load_digits(n_class=10, return_X_y=True)
+    mesh_limits = (np.min(X[:, 0]) - .5, np.max(X[:, 0]) + .5, np.min(X[:, 1]) - .5, np.max(X[:, 1]) + .5)
+
     model = MLPClassifier(hidden_layer_sizes=(100,100)).fit(X, y)
     ax = plt.subplot2grid([2, 2], (0, 0))
-    nd_boundary_plot(X, model, ax, resolution=100)
+    nd_boundary_plot(X, model, mesh_limits=mesh_limits, ax=ax, resolution=100)
 
     iris = load_iris()
     X, y = iris.data, iris.target
     model = LogisticRegression().fit(X, y)
     ax = plt.subplot2grid([2, 2], (1, 0))
-    nd_boundary_plot(X, model, ax, resolution=100)
+    mesh_limits = (np.min(X[:, 0]) - .5, np.max(X[:, 0]) + .5, np.min(X[:, 1]) - .5, np.max(X[:, 1]) + .5)
+    nd_boundary_plot(X, model, mesh_limits=mesh_limits, ax=ax, resolution=100)
 
     X, y = make_circles()
     model = BaggingClassifier().fit(X, y)
     ax = plt.subplot2grid([2, 2], (0, 1))
-    nd_boundary_plot(X, model, ax, resolution=100)
+    mesh_limits = (np.min(X[:, 0]) - .5, np.max(X[:, 0]) + .5, np.min(X[:, 1]) - .5, np.max(X[:, 1]) + .5)
+    nd_boundary_plot(X, model, mesh_limits=mesh_limits, ax=ax, resolution=100)
 
     X, y = make_circles()
     model = KNeighborsClassifier().fit(X, y)
     ax = plt.subplot2grid([2, 2], (1, 1))
-    nd_boundary_plot(X, model, ax, resolution=100)
+    mesh_limits = (np.min(X[:, 0]) - .5, np.max(X[:, 0]) + .5, np.min(X[:, 1]) - .5, np.max(X[:, 1]) + .5)
+    nd_boundary_plot(X, model, mesh_limits=mesh_limits, ax=ax, resolution=100)
 
     plt.tight_layout()
     plt.show()
