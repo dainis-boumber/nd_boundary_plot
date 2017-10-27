@@ -1,23 +1,18 @@
-import numpy as np, matplotlib.pyplot as plt
 from sklearn.neighbors.classification import KNeighborsClassifier
 from sklearn.manifold.t_sne import TSNE
+import numpy as np
 
+# draw a projection onto 2D using vornoi tessalation. Approximates highly dimensional boundaries in 2D
+# see https://pure.uva.nl/ws/files/2110683/164710_431596.pdf
+def nd_boundary_plot(X, y, y_predicted, ax, resolution = 256, **kwargs):
+    X_train = TSNE(n_components=2).fit_transform(X)
+    stdx, stdy = np.std(X_train[:,0]), np.std(X_train[:, 1])
+    xmin, xmax = np.min(X_train[:,0]) - stdx, np.max(X_train[:,0]) + stdx
+    ymin, ymax = np.min(X_train[:,1]) - stdy, np.max(X_train[:,1]) + stdy
+    xx, yy = np.meshgrid(np.linspace(xmin, xmax, resolution), np.linspace(ymin, ymax, resolution))
+    background_model = KNeighborsClassifier(n_neighbors=1).fit(X_train, y_predicted)
+    voronoi = background_model.predict(np.c_[xx.ravel(), yy.ravel()]).reshape((resolution, resolution))
+    ax.contourf(xx, yy, voronoi)
+    ax.scatter(X_train[:,0], X_train[:,1], c=y)
+    ax.set(**kwargs)
 
-def nd_boundary_plot(X, y, y_predicted):
-    X_Train_embedded = TSNE(n_components=2).fit_transform(X)
-    # create meshgrid
-    resolution = 100 # 100x100 background pixels
-    X2d_xmin, X2d_xmax = np.min(X_Train_embedded[:,0]), np.max(X_Train_embedded[:,0])
-    X2d_ymin, X2d_ymax = np.min(X_Train_embedded[:,1]), np.max(X_Train_embedded[:,1])
-    xx, yy = np.meshgrid(np.linspace(X2d_xmin, X2d_xmax, resolution), np.linspace(X2d_ymin, X2d_ymax, resolution))
-
-    # approximate Voronoi tesselation on resolution x resolution grid using 1-NN
-    background_model = KNeighborsClassifier(n_neighbors=1).fit(X_Train_embedded, y_predicted)
-    voronoiBackground = background_model.predict(np.c_[xx.ravel(), yy.ravel()])
-    voronoiBackground = voronoiBackground.reshape((resolution, resolution))
-
-    #plot
-    plt.contourf(xx, yy, voronoiBackground)
-    plt.scatter(X_Train_embedded[:,0], X_Train_embedded[:,1], c=y)
-    plt.show()
-    return
